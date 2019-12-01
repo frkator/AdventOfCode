@@ -4,6 +4,6 @@
 # compile
 ./gradlew clean testClasses
 
-#run
+# run
 ./gradlew -PmainClass=com.adventofcode._2019.day._1.fuelcounterupper.FuelCalculatorKt run
 
