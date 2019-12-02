@@ -20,7 +20,7 @@ application {
     mainClassName = if (project.hasProperty("mainClass")) {
         project.properties["mainClass"]!!.toString()
     } else {
-        "NULL"
+        "must set main class, read README"
     }
 }
 val javaVersion = JavaVersion.VERSION_1_8

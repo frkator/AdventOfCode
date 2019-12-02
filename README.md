@@ -9,5 +9,6 @@
 # run
 ```shell
 ./gradlew -PmainClass=com.adventofcode._2019.day._1.fuelcounterupper.FuelCalculatorKt run
+./gradlew -PmainClass=com.adventofcode._2019.day._2.intcodecomputer.IntCodeComputerKt run
 ```
 
