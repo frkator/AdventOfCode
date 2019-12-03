@@ -85,17 +85,13 @@ class WiresPanel(private val encodedLines:List<List<String>>) {
         val panel = mutableMapOf<Pair<Int,Int>,MutableList<String>>()
         encodedLines.forEachIndexed() { index, line ->
             var currentPoint = 0 to 0
-            panel.putIfAbsent(currentPoint, mutableListOf())
-            panel.get(currentPoint)!!.add(toLineId(index))
             for (encodedLineSegment in line) {
                 val (direction, length) = LineSegmentDecoder(encodedLineSegment).decode()
-                val lineSegment = direction.toCartesian(currentPoint, length)
+                val lineSegment = direction.toCartesian(currentPoint, length + 1)
                 currentPoint = lineSegment.last().copy()
-                //if (lineSegment.size > 1) {
-                    lineSegment/*.takeLast(lineSegment.size - 1)*/.forEach {
-                        panel.putIfAbsent(it, mutableListOf())
-                        panel.get(it)!!.add(toLineId(index))
-                  //  }
+                lineSegment.forEach {
+                    panel.putIfAbsent(it, mutableListOf())
+                    panel.get(it)!!.add(toLineId(index))
                 }
 
             }
@@ -104,7 +100,11 @@ class WiresPanel(private val encodedLines:List<List<String>>) {
     }
 
     fun findClosestCrossing(panel:Map<Pair<Int,Int>,MutableList<String>>):Pair<Int,Int> {
-        return panel.filter { it.key.first != 0 && it.key.second != 0 }.filter { it.value.toSet().size > 1 }.keys.minBy{ manhattanDistance(it) }!!
+        return panel
+                .filter { it.key.first != 0 && it.key.second != 0 }
+                .filter { it.value.toSet().size > 1 }
+                .keys
+                .minBy{ manhattanDistance(it) }!!
     }
 
     fun findDistanceToClosestCrossing():Int {
@@ -119,8 +119,8 @@ class WiresPanel(private val encodedLines:List<List<String>>) {
         val y = panel.keys.map { it.second }.max()!!
         val data = ByteArrayOutputStream()
         val printStream = PrintStream(data)
-        (y+1 downTo 0).forEach { i->
-            (0..x).forEach { j ->
+        (0..x).forEach { i->
+            (0..y).forEach { j ->
                 val point = Pair(i,j)
                 printStream.print(
                         if (point == Pair(0,0)) {
@@ -144,5 +144,17 @@ class WiresPanel(private val encodedLines:List<List<String>>) {
         }
         return data.toString()
     }
+
+}
+
+fun main(args:Array<String>) {
+    val input = WiresPanel::class.java.getResource("/com/adventofcode/_2019/day/_3/wirecrosses/wires.txt")
+    val wires = input
+                            .readText()
+                            .split(Regex(System.getProperty("line.separator")))
+                            .map {
+                                it.split(",").toList()
+                            }
+    println (WiresPanel(wires).findDistanceToClosestCrossing())
 
 }
