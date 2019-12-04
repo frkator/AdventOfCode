@@ -43,7 +43,7 @@ internal class WiresPanelTest {
         val wiresPanel = WiresPanel(encodedLines)
         val actualSpatialResult = wiresPanel.findDistanceToClosestCrossing()
         val actualTemporalResult = wiresPanel.findNumberOfStepsToClosestCrossing()
-        //println(wiresPanel.printPanel())
+        println(wiresPanel.printPanel())
         assertEquals(expectedSpatialResult, actualSpatialResult)
         assertEquals(expectedTemporalResult, actualTemporalResult)
     }
