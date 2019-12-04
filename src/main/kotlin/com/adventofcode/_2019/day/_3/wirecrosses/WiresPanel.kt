@@ -3,7 +3,6 @@ package com.adventofcode._2019.day._3.wirecrosses
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.lang.IllegalStateException
-import java.lang.StringBuilder
 
 val manhattanDistance = { point:Pair<Int,Int> -> Math.abs(point.first) + Math.abs(point.second) }
 
@@ -81,35 +80,57 @@ class WiresPanel(private val encodedLines:List<List<String>>) {
     private fun toLineId(index:Int)  = "line-${index}"
     private fun toIndex(lineId:String)  = lineId.replaceFirst("line-","").toInt()
 
-    fun placeWiresOnPanel():Map<Pair<Int,Int>,MutableList<String>> {
-        val panel = mutableMapOf<Pair<Int,Int>,MutableList<String>>()
-        encodedLines.forEachIndexed() { index, line ->
+    fun placeWiresOnPanel():Map<Pair<Int,Int>,MutableMap<String,Int>> {
+        val panel = mutableMapOf<Pair<Int,Int>,MutableMap<String,Int>>()
+        encodedLines.forEachIndexed { index, line ->
             var currentPoint = 0 to 0
+            var lineStepCounter = 0
             for (encodedLineSegment in line) {
                 val (direction, length) = LineSegmentDecoder(encodedLineSegment).decode()
                 val lineSegment = direction.toCartesian(currentPoint, length + 1)
-                currentPoint = lineSegment.last().copy()
-                lineSegment.forEach {
-                    panel.putIfAbsent(it, mutableListOf())
-                    panel.get(it)!!.add(toLineId(index))
+                currentPoint = lineSegment.last()
+                lineSegment.withIndex().forEach {
+                    val lineId = toLineId(index)
+                    panel.putIfAbsent(it.value, mutableMapOf())
+                    val linesThatCrossThisPoint = panel[it.value]!!
+                    if (!linesThatCrossThisPoint.containsKey(lineId)) {
+                        linesThatCrossThisPoint[lineId] = it.index + lineStepCounter
+                    }
+                    else {
+                        lineStepCounter = linesThatCrossThisPoint[lineId]!!
+                    }
                 }
-
+                lineStepCounter += lineSegment.size - 1
             }
         }
         return panel
     }
 
-    fun findClosestCrossing(panel:Map<Pair<Int,Int>,MutableList<String>>):Pair<Int,Int> {
+    fun findSpatiallyClosestCrossing(panel:Map<Pair<Int,Int>,MutableMap<String,Int>>):Pair<Int,Int> {
         return panel
                 .filter { it.key.first != 0 && it.key.second != 0 }
-                .filter { it.value.toSet().size > 1 }
+                .filter { it.value.keys.size > 1 }
                 .keys
                 .minBy{ manhattanDistance(it) }!!
     }
 
+    fun findTemporallyClosestCrossing(panel:Map<Pair<Int,Int>,MutableMap<String,Int>>):Pair<Int,Int> {
+        return panel
+                .filter { it.key.first != 0 && it.key.second != 0 }
+                .filter { it.value.keys.size > 1 }
+                .minBy { it.value.values.sum() }!!
+                .key
+    }
+
+    fun findNumberOfStepsToClosestCrossing(): Int {
+        val panel = placeWiresOnPanel()
+        val closestCrossing = findTemporallyClosestCrossing(panel)
+        return panel[closestCrossing]!!.values.sum()
+    }
+
     fun findDistanceToClosestCrossing():Int {
         val panel = placeWiresOnPanel()
-        val closestCrossing = findClosestCrossing(panel)
+        val closestCrossing = findSpatiallyClosestCrossing(panel)
         return manhattanDistance(closestCrossing)
     }
 
@@ -128,11 +149,11 @@ class WiresPanel(private val encodedLines:List<List<String>>) {
                         }
                         else if (panel.containsKey(point)) {
                             val lineIds = panel.get(point)!!
-                            if (lineIds.toSet().size > 1) {
+                            if (lineIds.keys.size > 1) {
                                 " X "
                             }
                             else {
-                                " ${toIndex(lineIds.first())} "
+                                " ${toIndex(lineIds.keys.first())} "
                             }
                         }
                         else {
@@ -155,6 +176,6 @@ fun main(args:Array<String>) {
                             .map {
                                 it.split(",").toList()
                             }
-    println (WiresPanel(wires).findDistanceToClosestCrossing())
-
+    println(WiresPanel(wires).findDistanceToClosestCrossing())
+    println(WiresPanel(wires).findNumberOfStepsToClosestCrossing())
 }
