@@ -64,8 +64,13 @@ class PasswordGuesser {
     }
 
     fun countCharFrequencies(password: Int, digit:Int): List<Int> {
-        //val eachCount = password.toString().toCharArray().filter { it=="$digit".toCharArray()[0] }.groupingBy { it }.eachCount()
-        val eachCount = password.toString().toCharArray().filter { it==digit.toChar() }.groupingBy { it }.eachCount()
+        val eachCount = password.toString().toCharArray().filter {
+            it == digit.toChar()
+        }
+        .groupingBy {
+            it
+        }
+        .eachCount()
         return eachCount.filter { it.value > 2  }.map { it.value }
     }
 }
