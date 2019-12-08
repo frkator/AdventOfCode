@@ -52,7 +52,6 @@ class AmplifierOptimizer(private val source:Array<Int>, private val loop:Boolean
         val computers = phaseSettings
                 .map { it to ExtendedIntCodeComputer(source.copyOf()) }.toMap()
         var currentIterationCounter = 0
-        println("run for $phaseSettings")
         val total = (1+phaseSettings().last-phaseSettings().first)
         exitLabel@do {
             if(currentIterationCounter < 5 ) {
@@ -63,6 +62,9 @@ class AmplifierOptimizer(private val source:Array<Int>, private val loop:Boolean
                 break@exitLabel
             }
             computers.getValue(phaseSettings[currentIterationCounter % total]).executeChunk()
+            if (computers.getValue(phaseSettings[currentIterationCounter % total]).isDone()) {
+                break@exitLabel
+            }
             if (dataStore.output.size != 1) {
                 println ("$currentIterationCounter ${dataStore.output}")
                 throw IllegalStateException()

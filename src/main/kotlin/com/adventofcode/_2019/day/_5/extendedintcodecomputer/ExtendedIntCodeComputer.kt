@@ -202,7 +202,7 @@ class ExtendedIntCodeComputer(private val code:Array<Int>) {
             println (code.withIndex().groupBy { it.index }.toMap().mapValues { it.value.first().value })
             when(operation) {
                 Operation.ILLEGAL -> throw IllegalStateException()
-                Operation.EXIT -> {}
+                Operation.EXIT -> { isDone = true}
                 else -> {
                     Instruction(programCounter, operation, loadMode).execute(code)
                     if (operation == Operation.OUTPUT) {
@@ -210,10 +210,9 @@ class ExtendedIntCodeComputer(private val code:Array<Int>) {
                     }
                 }
             }
-            println("--end chunk")
         }
         while(Operation.EXIT != operation)
-        isDone = programCounter.read() == 0
+        println("--end chunk")
     }
 
 }

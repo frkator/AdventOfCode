@@ -23,7 +23,7 @@ internal class AmplifierOptimizerTest {
     @ParameterizedTest
     @MethodSource("sourceCode")
     fun test(source:Array<Int>,expectedPhaseSetting:Array<Int>,expectedSignal:Int) {
-        IO.printOutput = false
+        IO.printOutput = true
         val actualSignal = AmplifierOptimizer(source, true).optimize()
         assertEquals(expectedSignal,actualSignal)
     }
