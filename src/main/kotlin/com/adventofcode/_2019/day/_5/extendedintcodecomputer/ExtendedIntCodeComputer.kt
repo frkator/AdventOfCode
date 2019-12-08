@@ -147,7 +147,7 @@ class ExtendedIntCodeComputer(private val code:Array<Int>) {
                 Operation.ILLEGAL -> throw IllegalStateException()
                 Operation.EXIT -> {}
                 else -> {
-                    val programCounterIncrease = Instruction(programCounter, operation, loadMode).execute(code)
+                    Instruction(programCounter, operation, loadMode).execute(code)
                 }
             }
             println("--end")

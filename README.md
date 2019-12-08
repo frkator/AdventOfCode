@@ -12,3 +12,8 @@
 ./gradlew -PmainClass=com.adventofcode._2019.day._2.intcodecomputer.IntCodeComputerKt run
 ```
 
+# todo
+
+day 3 why 2 same approaches yield differnt result
+day 4 char counter
+daz 6 default equals stackoverflow error on finte small graph (toString hack, remove equals and hashcode too) also algorithm compare
