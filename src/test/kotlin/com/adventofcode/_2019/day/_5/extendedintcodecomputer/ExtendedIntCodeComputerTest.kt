@@ -1,8 +1,5 @@
 package com.adventofcode._2019.day._5.extendedintcodecomputer
 
-import com.adventofcode._2019.day._2.intcodecomputer.IntCodeComputer
-import org.junit.jupiter.api.Test
-
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -47,7 +44,7 @@ internal class ExtendedIntCodeComputerTest {
     @ParameterizedTest
     @MethodSource("sourceCode")
     fun execute(input:Array<Int>,expectedResult:Array<Int>) {
-        ExtendedIntCodeComputer(input).execute()
+        ExtendedIntCodeComputer(input).executeAll()
         assertArrayEquals(expectedResult,input)
     }
 }

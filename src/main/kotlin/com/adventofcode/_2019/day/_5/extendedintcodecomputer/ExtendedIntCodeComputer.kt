@@ -3,6 +3,40 @@ package com.adventofcode._2019.day._5.extendedintcodecomputer
 import java.lang.Exception
 import java.lang.IllegalStateException
 import java.util.function.Function
+fun println(msg: Any?)  {
+    if (IO.printOutput) {
+        kotlin.io.println(msg)
+    }
+}
+fun print(msg:Any?) {
+    if (IO.printOutput) {
+        kotlin.io.print(msg)
+    }
+}
+
+open class IO {
+    companion object {
+        private var _printOutput = true
+        var printOutput = _printOutput
+            get set
+
+        private var _impl = IO()
+        var impl = _impl
+            get() = _impl
+
+        fun set(io:IO) {
+            _impl = io
+        }
+    }
+
+    open fun inputImpl():String {
+        return readLine()!!
+    }
+
+    open fun outputImpl(output:Int):Int {
+        return output
+    }
+}
 
 enum class LoadMode {
     POSITION,
@@ -19,11 +53,11 @@ enum class Operation(val code:Int, val parameterCount:Int, val regular:Boolean) 
     INPUT (3,1,true) {
         override fun apply(operand: List<Int>): Int {
             println("input:")
-            return readLine()!!.toInt()
+            return IO.impl.inputImpl().toInt()
         }
     },
     OUTPUT (4,1,true) {
-        override fun apply(operand: List<Int>): Int = operand[0]
+        override fun apply(operand: List<Int>): Int = IO.impl.outputImpl(operand[0])
     },
     JUMP_IF_TRUE(5,2,false) {
         override fun apply(operand: List<Int>): Int =  if (operand[0] > 0) { operand[1] } else { -1 }
@@ -136,8 +170,10 @@ data class ProgramCounter(private var value:Int) {
 
 class ExtendedIntCodeComputer(private val code:Array<Int>) {
 
-    fun execute() {
-        val programCounter = ProgramCounter(0)
+    private val programCounter = ProgramCounter(0)
+
+    fun executeAll() {
+        check(programCounter.read() == 0)
         do {
             print("PC=$programCounter: ${code[programCounter.read()]} ")
             val (operation,loadMode) = Operation.decode(code[programCounter.read()])
@@ -155,6 +191,31 @@ class ExtendedIntCodeComputer(private val code:Array<Int>) {
         while(Operation.EXIT != operation)
     }
 
+    private var isDone = false
+    fun isDone():Boolean = isDone
+
+    fun executeChunk() {
+        loop@ do {
+            print("PC=$programCounter: ${code[programCounter.read()]} ")
+            val (operation,loadMode) = Operation.decode(code[programCounter.read()])
+            println("code=${operation.code} ${operation.name} load mode=${loadMode.toList()}")
+            println (code.withIndex().groupBy { it.index }.toMap().mapValues { it.value.first().value })
+            when(operation) {
+                Operation.ILLEGAL -> throw IllegalStateException()
+                Operation.EXIT -> {}
+                else -> {
+                    Instruction(programCounter, operation, loadMode).execute(code)
+                    if (operation == Operation.OUTPUT) {
+                        break@loop
+                    }
+                }
+            }
+            println("--end chunk")
+        }
+        while(Operation.EXIT != operation)
+        isDone = programCounter.read() == 0
+    }
+
 }
 
 fun main(args:Array<String>) {
@@ -162,6 +223,6 @@ fun main(args:Array<String>) {
     val source = input.readText().split(Regex(",")).map { it.toInt() }.toTypedArray()
     //val source = arrayOf(3,0,4,0,99)
     val fileInput = source.copyOf()
-    ExtendedIntCodeComputer(fileInput).execute()
+    ExtendedIntCodeComputer(fileInput).executeAll()
     println(fileInput.toList())
 }
