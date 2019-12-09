@@ -95,6 +95,9 @@ enum class Operation(val code:Int, val parameterCount:Int, val regular:Boolean) 
 data class Instruction(val programCounter:ProgramCounter, val operation:Operation, val loadMode: Array<LoadMode>) {
 
     private fun load(code: MutableList<BigInteger>, loadModeIndex:Int, address:Int):BigInteger {
+        if (address >= code.size) {
+            println("adding ${address-code.size+1} memory cells, from address ${code.size} to ${address}")
+        }
         while (address >= code.size) {
             code.add(0.toBigInteger())
         }
