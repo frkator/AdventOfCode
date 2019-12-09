@@ -58,9 +58,6 @@ class AmplifierOptimizer(private val source:Array<Int>, private val loop:Boolean
                 dataStore.input.add(phaseSettings[currentIterationCounter])
             }
             dataStore.input.add(output)
-            if (computers.getValue(phaseSettings[currentIterationCounter % total]).isDone()) {
-                break@exitLabel
-            }
             computers.getValue(phaseSettings[currentIterationCounter % total]).executeChunk()
             if (computers.getValue(phaseSettings[currentIterationCounter % total]).isDone()) {
                 break@exitLabel
@@ -104,3 +101,4 @@ fun main(args:Array<String>) {
     val loopedMax = AmplifierOptimizer(source.copyOf(),true).optimize()
     println("$chainedMax $loopedMax")
 }
+
