@@ -94,46 +94,67 @@ enum class Operation(val code:Int, val parameterCount:Int, val regular:Boolean) 
 
 data class Instruction(val programCounter:ProgramCounter, val operation:Operation, val loadMode: Array<LoadMode>) {
 
-    private fun load(code: MutableList<BigInteger>, loadModeIndex:Int, address:Int):BigInteger {
-        if (address >= code.size) {
-            println("adding ${address-code.size+1} memory cells, from address ${code.size} to ${address}")
+    private fun ensureMemoryIsSufficient(code: MutableList<BigInteger>, currentAddress:Int) {
+        if (currentAddress >= code.size) {
+            println("adding ${currentAddress - code.size + 1} memory cells, from address ${code.size} to ${currentAddress}")
         }
-        while (address >= code.size) {
+        while (currentAddress >= code.size) {
             code.add(0.toBigInteger())
         }
+    }
+
+    private fun load(code: MutableList<BigInteger>, loadModeIndex:Int, address:Int):BigInteger {
         return when(loadMode[loadModeIndex]) {
             LoadMode.IMMEDIATE  -> code[address]
-            LoadMode.POSITION -> code[code[address].toInt()]
-            LoadMode.RELATIVE -> code[code[address].toInt() + programCounter.offset.value]
+            LoadMode.POSITION -> {
+                val parameterAddress = code[address].toInt()
+                ensureMemoryIsSufficient(code, parameterAddress)
+                code[parameterAddress]
+            }
+            LoadMode.RELATIVE -> {
+                val parameterAddress = code[address].toInt() + programCounter.offset.value
+                ensureMemoryIsSufficient(code, parameterAddress)
+                code[parameterAddress]
+            }
         }
     }
 
     fun execute(code: MutableList<BigInteger>) {
         val firstParameterAddress = programCounter.read() + 1
         val lastParameterAddress = programCounter.read() + operation.parameterCount
+        ensureMemoryIsSufficient(code,lastParameterAddress)
+        ensureMemoryIsSufficient(code,code[lastParameterAddress].toInt())
         val resultAddress = code[lastParameterAddress]
         val parameterValues = (firstParameterAddress .. lastParameterAddress).map {
             load(code,it-firstParameterAddress,it)
         }
-        print("${parameterValues.take(operation.parameterCount - 1)} ")
         if (operation.regular) {
+            print("${parameterValues.take(operation.parameterCount - 1)} ") //last parameter(can be first too) is a result
             code[resultAddress.toInt()] = operation.apply(parameterValues)
             println("writes to memory @ address ${resultAddress} value ${code[resultAddress.toInt()]}")
             programCounter.increase(operation.parameterCount + 1)
         }
         else {
+            print("${parameterValues} ")
             val result = operation.apply(parameterValues)
             if (operation == Operation.JUMP_IF_FALSE || operation == Operation.JUMP_IF_TRUE) {
-                println("jumping at $result ")
-                programCounter.write(result.toInt())
+                if (result > -1.toBigInteger()) {
+                    println("jumping at $result ")
+                    programCounter.write(result.toInt())
+                }
+                else {
+                    println("no operation")
+                    programCounter.increase(operation.parameterCount + 1)
+                }
             }
             else if (operation == Operation.ADJUST_RELATIVE_BASE) {
                 print("adjusting relative base for $result from ${programCounter.offset.value} ")
                 programCounter.offset.value = result.toInt()
                 println("to ${programCounter.offset.value}")
+                programCounter.increase(operation.parameterCount + 1)
             }
             else if (operation == Operation.EXIT){
-                println("no operation")
+                println("exit")
                 programCounter.increase(operation.parameterCount + 1)
             }
             else {
@@ -146,10 +167,11 @@ data class Instruction(val programCounter:ProgramCounter, val operation:Operatio
 
 class RelativeOffsetBase {
     private var _value = 0
-    var value = _value
-    get set(value:Int){
-        _value += value
-    }
+    var value
+        get() = _value
+        set(value:Int) {
+            _value += value
+        }
 
     override fun toString(): String {
         return "$_value"
