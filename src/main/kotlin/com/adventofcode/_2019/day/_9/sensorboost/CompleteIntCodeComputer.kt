@@ -12,7 +12,7 @@ enum class LoadMode {
     RELATIVE
 }
 
-enum class Operation(val code:Int, val parameterCount:Int, val regular:Boolean) : Function<List<BigInteger>,BigInteger> {
+enum class Operation(val code:Int, val operandCount:Int, val regular:Boolean) : Function<List<BigInteger>,BigInteger> {
     ADD(1, 3, true) {
         override fun apply(operand: List<BigInteger>): BigInteger = operand[0] + operand[1]
     },
@@ -65,11 +65,11 @@ enum class Operation(val code:Int, val parameterCount:Int, val regular:Boolean) 
                         .find { operation ->
                             operation.code == code.toString().takeLast(2).toInt()
                         } ?: ILLEGAL
-                val loadMode = if (operation.parameterCount > 0) {
+                val loadMode = if (operation.operandCount > 0) {
                     code
                             .toString()
-                            .padStart(operation.parameterCount + 2, '0')
-                            .substring(0, operation.parameterCount)
+                            .padStart(operation.operandCount + 2, '0')
+                            .substring(0, operation.operandCount)
                             .map {
                                 when (it.toString().toInt()) {
                                     0 -> LoadMode.POSITION
@@ -103,59 +103,57 @@ data class Instruction(val programCounter:ProgramCounter, val operation:Operatio
         }
     }
 
-    private fun load(code: MutableList<BigInteger>, loadModeIndex:Int, address:Int):BigInteger {
+    private fun calculateAdress(code: MutableList<BigInteger>, loadModeIndex:Int, address:Int):Int {
         return when(loadMode[loadModeIndex]) {
-            LoadMode.IMMEDIATE  -> code[address]
+            LoadMode.IMMEDIATE  -> address
             LoadMode.POSITION -> {
-                val parameterAddress = code[address].toInt()
-                ensureMemoryIsSufficient(code, parameterAddress)
-                code[parameterAddress]
+                val operandAddress = code[address].toInt()
+                ensureMemoryIsSufficient(code, operandAddress)
+                operandAddress
             }
             LoadMode.RELATIVE -> {
-                val parameterAddress = code[address].toInt() + programCounter.offset.value
-                ensureMemoryIsSufficient(code, parameterAddress)
-                code[parameterAddress]
+                val operandAddress = code[address].toInt() + programCounter.offset.value
+                ensureMemoryIsSufficient(code, operandAddress)
+                operandAddress
             }
         }
     }
 
     fun execute(code: MutableList<BigInteger>) {
-        val firstParameterAddress = programCounter.read() + 1
-        val lastParameterAddress = programCounter.read() + operation.parameterCount
-        ensureMemoryIsSufficient(code,lastParameterAddress)
-        ensureMemoryIsSufficient(code,code[lastParameterAddress].toInt())
-        val resultAddress = code[lastParameterAddress]
-        val parameterValues = (firstParameterAddress .. lastParameterAddress).map {
-            load(code,it-firstParameterAddress,it)
+        val firstOperandAddress = programCounter.read() + 1
+        val lastOperandAddress = programCounter.read() + operation.operandCount
+        val parameterAddresses = (firstOperandAddress .. lastOperandAddress).map {
+            calculateAdress(code,it - firstOperandAddress, it)
         }
+        val resultAddress = parameterAddresses.last() // or first for instructions with 1 operand
+        val parameterValues = parameterAddresses.map { code[it] }
+        print("operands ${firstOperandAddress..lastOperandAddress} -> adresses ${parameterAddresses} -> values ${parameterValues} ")
         if (operation.regular) {
-            print("${parameterValues.take(operation.parameterCount - 1)} ") //last parameter(can be first too) is a result
-            code[resultAddress.toInt()] = operation.apply(parameterValues)
+            code[resultAddress] = operation.apply(parameterValues)
             println("writes to memory @ address ${resultAddress} value ${code[resultAddress.toInt()]}")
-            programCounter.increase(operation.parameterCount + 1)
+            programCounter.increase(operation.operandCount + 1)
         }
         else {
-            print("${parameterValues} ")
             val result = operation.apply(parameterValues)
             if (operation == Operation.JUMP_IF_FALSE || operation == Operation.JUMP_IF_TRUE) {
-                if (result > -1.toBigInteger()) {
+                if (result > (-1).run { toBigInteger() }) {
                     println("jumping at $result ")
                     programCounter.write(result.toInt())
                 }
                 else {
                     println("no operation")
-                    programCounter.increase(operation.parameterCount + 1)
+                    programCounter.increase(operation.operandCount + 1)
                 }
             }
             else if (operation == Operation.ADJUST_RELATIVE_BASE) {
                 print("adjusting relative base for $result from ${programCounter.offset.value} ")
                 programCounter.offset.value = result.toInt()
                 println("to ${programCounter.offset.value}")
-                programCounter.increase(operation.parameterCount + 1)
+                programCounter.increase(operation.operandCount + 1)
             }
             else if (operation == Operation.EXIT){
                 println("exit")
-                programCounter.increase(operation.parameterCount + 1)
+                programCounter.increase(operation.operandCount + 1)
             }
             else {
                 throw IllegalStateException()

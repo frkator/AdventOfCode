@@ -24,8 +24,16 @@ internal class CompleteIntCodeComputerTest {
     fun testExecuteAll(input:List<Int>,expectedResult:List<Int>) {
         val actualResult = input.map { it.toBigInteger() }.toMutableList()
         CompleteIntCodeComputer(actualResult).executeAll()
-        assertEquals(expectedResult.map { it.toBigInteger() },actualResult)
+        assert(actualResult.size >= expectedResult.size)
+        if (actualResult.size > expectedResult.size) {
+            val tail = actualResult.subList(expectedResult.size + 1, actualResult.size)
+            if (tail.count { it == 0.toBigInteger() } == tail.size) {
+                while (actualResult.size > expectedResult.size) {
+                    actualResult.removeAt(actualResult.lastIndex)
+                }
+            }
+        }
+        assertEquals(expectedResult.map { it.toBigInteger() }, actualResult)
     }
-
 
 }
