@@ -17,3 +17,4 @@
 day 3 why 2 same approaches yield differnt result
 day 4 char counter
 daz 6 default equals stackoverflow error on finte small graph (toString hack, remove equals and hashcode too) also algorithm compare
+day 9 pt 1 soultion correct test incorrect
