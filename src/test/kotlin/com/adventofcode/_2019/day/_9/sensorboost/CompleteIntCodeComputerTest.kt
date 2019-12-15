@@ -8,7 +8,6 @@ import java.math.BigInteger
 
 internal class CompleteIntCodeComputerTest {
 
-
     companion object {
         @JvmStatic
         fun sources(): List<Arguments> {
@@ -16,7 +15,7 @@ internal class CompleteIntCodeComputerTest {
                     Arguments.of(
                             listOf(109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99).map { it.toBigInteger() },
                             listOf(109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99).map { it.toBigInteger() }
-                    )/*,
+                    ),
                     Arguments.of(
                             listOf(1102,34915192,34915192,7,4,7,99,0).map { it.toBigInteger() },
                             listOf(1102, 34915192, 34915192, 7, 4, 7, 99, 1219070632396864).map { it.toBigInteger() }
@@ -24,7 +23,7 @@ internal class CompleteIntCodeComputerTest {
                     Arguments.of(
                             listOf(104,1125899906842624,99).map { it.toBigInteger() },
                             listOf(104,1125899906842624,99).map { it.toBigInteger() }
-                    )*/
+                    )
             )
         }
     }
