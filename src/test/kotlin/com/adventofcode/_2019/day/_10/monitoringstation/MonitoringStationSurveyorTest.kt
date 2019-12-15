@@ -26,7 +26,7 @@ internal class MonitoringStationSurveyorTest {
     @ParameterizedTest
     @MethodSource("maps")
     fun calculate(map: String, expectedResult: Point) {
-        val actualResult = MonitoringStationSurveyor(map).findBestLocation()
+        val actualResult = MonitoringStationSurveyor(map).findBestLocation(true)
         assertEquals(expectedResult, actualResult)
     }
 }

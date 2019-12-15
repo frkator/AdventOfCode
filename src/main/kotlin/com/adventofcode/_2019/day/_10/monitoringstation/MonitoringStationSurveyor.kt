@@ -31,7 +31,7 @@ class LineSegment(val start: Point, val end: Point) {
                 }
             }
         }
-        return LinkedHashSet(lineSegment)
+        return LinkedHashSet(if(lineSegment.last() == start) {lineSegment.reversed()} else {lineSegment})
     }
 
 }
@@ -45,28 +45,63 @@ class MonitoringStationSurveyor(map: String) {
     val xMax = indexedMap.keys.maxBy { it.x }!!.x
     val yMax = indexedMap.keys.maxBy { it.y }!!.y
 
-    fun countAsteroids(point: Point): Int {
-        val allAsteroids = indexedMap.keys.filter { it != point }.toMutableList()
-        val visibleAsteroids = mutableSetOf<Point>()
+    fun generateSequenceFor(center:Point):Set<Point> {
+        val points = mutableSetOf<Point>()
         for (x in 0..xMax) {
             for (y in 0..yMax) {
-                val currentPoint = Point(x, y)
+                points.add(Point(x, y))
+            }
+        }
+        //points.retainAll { !(it.x == center.x && it.x > 0 && it.x < xMax) }
+        //points.retainAll { !(it.y == center.y && it.y > 0 && it.y < yMax) }
+        return points
+    }
+
+    fun findVisibleAsteroids(point: Point, indexedMap:Map<Point, Char> = this.indexedMap,dump:Boolean = false): Set<Point> {
+        val allAsteroids = indexedMap.keys.filter { it != point }.toMutableList()
+        val visibleAsteroids = mutableSetOf<Point>()
+        if(dump)println ("for point $point")
+        for (currentPoint in generateSequenceFor(point)) {
                 if (allAsteroids.contains(currentPoint)) {
                     val currentLine = LineSegment(point, currentPoint)
                     val firstAsteroid = currentLine.value.find { it != point && indexedMap[it] == '#' }
                     if (firstAsteroid != null) {
+                        if(dump) println("$firstAsteroid -> |${currentLine.start},${currentLine.end}| ${currentLine.value}")
                         visibleAsteroids.add(firstAsteroid)
                     }
                     allAsteroids.removeAll(currentLine.value)
                 }
-            }
         }
-        //println("$point ${visibleAsteroids.size} $visibleAsteroids")
-        return visibleAsteroids.size
+        if (dump) println("visible asteroids ${visibleAsteroids.size} $visibleAsteroids")
+        return visibleAsteroids.toSet()
     }
 
-    fun findBestLocation(): Point {
-        return indexedMap.filter { it.value == '#' }.keys.maxBy { countAsteroids(it) }!!
+    fun findBestLocation(dump:Boolean = false): Point {
+        return indexedMap.filter { it.value == '#' }.keys.maxBy { findVisibleAsteroids(it,indexedMap,dump).size }!!
+    }
+
+    fun vaporizeAsteroids(stationLocation:Point): List<Point> {
+        val map = indexedMap.filter { it.key != stationLocation }.toMutableMap()
+        map[stationLocation] = 'x'
+        val vaporizedAsteroids = mutableListOf<Point>()
+        val visibleAsteroids = mutableSetOf<Point>()
+        do {
+            //println("${visibleAsteroids.size} $visibleAsteroids")/*
+            println( map
+                        .map { it }
+                        .groupBy { it.key.y }
+                        .map { it.value.map { it.value }.joinToString(separator = "")}
+                        .joinToString(separator = "\n")
+
+            )
+            println()
+            visibleAsteroids.clear()
+            visibleAsteroids.addAll(findVisibleAsteroids(stationLocation, map,true))
+            vaporizedAsteroids.addAll(visibleAsteroids)
+            visibleAsteroids.forEach { map[it] = '.' }
+            //break
+        } while (visibleAsteroids.isNotEmpty())
+        return vaporizedAsteroids
     }
 
 }
@@ -75,5 +110,7 @@ fun main(args:Array<String>) {
     val input = MonitoringStationSurveyor::class.java.getResource("/com/adventofcode/_2019/day/_10/monitoringstation/asteroid-map.txt")
     val monitoringStationSurveyor = MonitoringStationSurveyor(input.readText())
     val bestLocation = monitoringStationSurveyor.findBestLocation()
-    println ("$bestLocation ${monitoringStationSurveyor.countAsteroids(bestLocation)}")
+    println ("$bestLocation ${monitoringStationSurveyor.findVisibleAsteroids(bestLocation).size}")
+    val asteroidVaporizationOrder = monitoringStationSurveyor.vaporizeAsteroids(bestLocation)
+    println("${asteroidVaporizationOrder[199]}")
 }
