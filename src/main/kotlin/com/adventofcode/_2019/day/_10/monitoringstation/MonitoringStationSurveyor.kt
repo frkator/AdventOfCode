@@ -2,7 +2,11 @@ package com.adventofcode._2019.day._10.monitoringstation
 
 import kotlin.math.roundToInt
 
-data class Point(val x: Int, val y: Int)
+data class Point(val x: Int, val y: Int) {
+    fun isEdge(center: Point,xmax:Int, ymax:Int): Boolean {
+        return (center.x==x && (y==0 || y==ymax)) || (center.y==y && (x==0 || x==xmax))
+    }
+}
 
 class LineSegment(val start: Point, val end: Point) {
 
@@ -45,32 +49,25 @@ class MonitoringStationSurveyor(map: String) {
     val xMax = indexedMap.keys.maxBy { it.x }!!.x
     val yMax = indexedMap.keys.maxBy { it.y }!!.y
 
-    fun generateSequenceFor(center:Point):Set<Point> {
-        val points = mutableSetOf<Point>()
-        for (x in 0..xMax) {
-            for (y in 0..yMax) {
-                points.add(Point(x, y))
-            }
-        }
-        //points.retainAll { !(it.x == center.x && it.x > 0 && it.x < xMax) }
-        //points.retainAll { !(it.y == center.y && it.y > 0 && it.y < yMax) }
-        return points
-    }
+
 
     fun findVisibleAsteroids(point: Point, indexedMap:Map<Point, Char> = this.indexedMap,dump:Boolean = false): Set<Point> {
         val allAsteroids = indexedMap.keys.filter { it != point }.toMutableList()
         val visibleAsteroids = mutableSetOf<Point>()
         if(dump)println ("for point $point")
-        for (currentPoint in generateSequenceFor(point)) {
+        for (x in 0..xMax) {
+            for (y in 0..yMax) {
+                val currentPoint = Point(x, y)
                 if (allAsteroids.contains(currentPoint)) {
                     val currentLine = LineSegment(point, currentPoint)
                     val firstAsteroid = currentLine.value.find { it != point && indexedMap[it] == '#' }
                     if (firstAsteroid != null) {
-                        if(dump) println("$firstAsteroid -> |${currentLine.start},${currentLine.end}| ${currentLine.value}")
+                        if (dump) println("$firstAsteroid -> |${currentLine.start},${currentLine.end}| ${currentLine.value.size} ${currentLine.value}")
                         visibleAsteroids.add(firstAsteroid)
                     }
                     allAsteroids.removeAll(currentLine.value)
                 }
+            }
         }
         if (dump) println("visible asteroids ${visibleAsteroids.size} $visibleAsteroids")
         return visibleAsteroids.toSet()
@@ -87,10 +84,16 @@ class MonitoringStationSurveyor(map: String) {
         val visibleAsteroids = mutableSetOf<Point>()
         do {
             //println("${visibleAsteroids.size} $visibleAsteroids")/*
+            print("   ")
+            (0..xMax).forEach { print(if (it/10 > 0) {"${it/10}" } else {" "}) }
+            println()
+            print("   ")
+            (0..xMax).forEach { print(it%10) }
+            println()
             println( map
                         .map { it }
                         .groupBy { it.key.y }
-                        .map { it.value.map { it.value }.joinToString(separator = "")}
+                        .map { "%2d ${it.value.map { it.value }.joinToString(separator = "")}".format(it.key)}
                         .joinToString(separator = "\n")
 
             )
