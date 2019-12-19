@@ -1,8 +1,31 @@
 package com.adventofcode._2019.day._10.monitoringstation
 
 import java.lang.IllegalStateException
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
+fun dump(map:Map<Point, Char>, xMax:Int, yMax:Int) {
+    print("   ")
+    (0..xMax).forEach {
+        print(if (it / 10 > 0) {
+            "${it / 10}"
+        } else {
+            " "
+        })
+    }
+    println()
+    print("   ")
+    (0..xMax).forEach { print(it % 10) }
+    println()
+    println(map
+            .map { it }
+            .groupBy { it.key.y }
+            .map { "%2d ${it.value.map { it.value }.joinToString(separator = "")}".format(it.key) }
+            .joinToString(separator = "\n")
+
+    )
+    println()
+}
 
 fun greatestCommonDenominator(a:Int, b:Int):Int {
     return if (b==0) { a } else { greatestCommonDenominator(b,a%b) }
@@ -34,9 +57,13 @@ data class Slope(val dX:Int, val dY:Int) {
 
 data class Point(val x: Int, val y: Int) {
     fun quadrant(center: Point):Int {
-        when (this) {
-            this.x>center.x &&
-        }
+        return when {
+                    this.x >= center.x && this.y >= center.y -> 0
+                    this.x > center.x && this.y < center.y -> 1
+                    this.x <= center.x && this.y <= center.y -> 2
+                    this.x < center.x && this.y > center.y -> 3
+                    else -> throw IllegalStateException()
+                }
     }
 }
 
@@ -92,19 +119,18 @@ class MonitoringStationSurveyor(map: String) {
             for (y in 0..yMax) {
                 val point = Point(x,y)
                 if (center.x != x && center.y != y) {
-                    edgePoints.put(Slope.of(center,x,y),point)
+                    edgePoints[Slope.of(center,x,y)] = point
                 }
                 else if (point in centerEdgePoints) {
-                   edgePoints.put(
+                    edgePoints[
                         when (point) {
                             left -> Slope(Int.MAX_VALUE,Int.MAX_VALUE-1)
                             right -> Slope(Int.MAX_VALUE,Int.MAX_VALUE-2)
                             up -> Slope(Int.MAX_VALUE,Int.MAX_VALUE-3)
                             down -> Slope(Int.MAX_VALUE,Int.MAX_VALUE-4)
                             else -> throw IllegalStateException()
-                        },
-                        point
-                   )
+                        }
+                    ] = point
                 }
             }
         }
@@ -113,11 +139,13 @@ class MonitoringStationSurveyor(map: String) {
 
     fun sortToEdgeRectangleBasedOnCenterPoint(center: Point):List<Point> {
         val edgePoints = generateMapEdgePoints(center)
-        return edgePoints.values.toList().sortedWith(compareBy(
-                {
-                    when
-                }
-        ))
+        return edgePoints.values.toList().sortedWith(
+            compareBy(
+                { it.quadrant(center) },
+                { abs(center.x - it.x) },
+                { it.y - center.y }
+            )
+        )
     }
 
     fun findVisibleAsteroids(point: Point, indexedMap:Map<Point, Char> = this.indexedMap,dump:Boolean = false): Set<Point> {
@@ -153,20 +181,7 @@ class MonitoringStationSurveyor(map: String) {
         val visibleAsteroids = mutableSetOf<Point>()
         do {
             //println("${visibleAsteroids.size} $visibleAsteroids")/*
-            print("   ")
-            (0..xMax).forEach { print(if (it/10 > 0) {"${it/10}" } else {" "}) }
-            println()
-            print("   ")
-            (0..xMax).forEach { print(it%10) }
-            println()
-            println( map
-                        .map { it }
-                        .groupBy { it.key.y }
-                        .map { "%2d ${it.value.map { it.value }.joinToString(separator = "")}".format(it.key)}
-                        .joinToString(separator = "\n")
-
-            )
-            println()
+            dump(map,xMax,yMax)
             visibleAsteroids.clear()
             visibleAsteroids.addAll(findVisibleAsteroids(stationLocation, map,true))
             vaporizedAsteroids.addAll(visibleAsteroids)
@@ -175,6 +190,7 @@ class MonitoringStationSurveyor(map: String) {
         } while (visibleAsteroids.isNotEmpty())
         return vaporizedAsteroids
     }
+
 
 }
 

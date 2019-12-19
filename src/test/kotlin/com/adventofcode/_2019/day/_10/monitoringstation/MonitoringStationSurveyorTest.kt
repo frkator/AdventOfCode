@@ -54,4 +54,29 @@ internal class MonitoringStationSurveyorTest {
         assertEquals(expectedResult, actualResult)
     }
 
+    @ParameterizedTest
+    @MethodSource("maps")
+    fun testSort(map: String, expectedResult: Point) {
+        val monitoringStationSurveyor = MonitoringStationSurveyor(map)
+        val actualResult = monitoringStationSurveyor.findBestLocation(true)
+        val unsortedEdge = monitoringStationSurveyor.generateMapEdgePoints(actualResult)
+        val sortedEdge = monitoringStationSurveyor.sortToEdgeRectangleBasedOnCenterPoint(actualResult)
+        _dump(sortedEdge,4,4,actualResult)
+    }
+
+    fun _dump(points: List<Point>, xMax: Int, yMax: Int, center: Point) {
+        val map = points.withIndex().map { it.value to it.index.toString().toCharArray().last()}.toMap().toMutableMap()
+        for (x in 0..xMax) {
+            for (y in 0..yMax) {
+                val point = Point(x,y)
+                if (!map.containsKey(point)) {
+                    map[point] = "0".toCharArray()[0]
+                }
+                if (point==center) {
+                    map[center] = "x".toCharArray().first()
+                }
+            }
+        }
+        dump(map.toMap(), xMax, yMax)
+    }
 }
