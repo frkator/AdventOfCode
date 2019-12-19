@@ -1,10 +1,42 @@
 package com.adventofcode._2019.day._10.monitoringstation
 
+import java.lang.IllegalStateException
 import kotlin.math.roundToInt
 
+
+fun greatestCommonDenominator(a:Int, b:Int):Int {
+    return if (b==0) { a } else { greatestCommonDenominator(b,a%b) }
+}
+
+data class Slope(val dX:Int, val dY:Int) {
+
+    val gcd = greatestCommonDenominator(dY, dX)
+
+    override fun equals(other: Any?): Boolean {
+        return if (other is Slope) {
+            this.hashCode() == other.hashCode()
+        }
+        else {
+            false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return (dX/gcd).hashCode() + (dY/gcd).hashCode()
+    }
+
+    companion object {
+        fun of(center:Point, x:Int, y:Int):Slope {
+            return Slope(Math.abs(center.x-x),y-center.y)
+        }
+    }
+}
+
 data class Point(val x: Int, val y: Int) {
-    fun isEdge(center: Point,xmax:Int, ymax:Int): Boolean {
-        return (center.x==x && (y==0 || y==ymax)) || (center.y==y && (x==0 || x==xmax))
+    fun quadrant(center: Point):Int {
+        when (this) {
+            this.x>center.x &&
+        }
     }
 }
 
@@ -49,7 +81,44 @@ class MonitoringStationSurveyor(map: String) {
     val xMax = indexedMap.keys.maxBy { it.x }!!.x
     val yMax = indexedMap.keys.maxBy { it.y }!!.y
 
+    fun generateMapEdgePoints(center: Point): MutableMap<Slope, Point> {
+        val edgePoints = mutableMapOf<Slope, Point>()
+        val left = Point(0, center.y)
+        val right = Point(xMax, center.y)
+        val up = Point(center.x,0)
+        val down = Point(center.x,yMax)
+        val centerEdgePoints = setOf(left,right,up,down)
+        for (x in 0..xMax) {
+            for (y in 0..yMax) {
+                val point = Point(x,y)
+                if (center.x != x && center.y != y) {
+                    edgePoints.put(Slope.of(center,x,y),point)
+                }
+                else if (point in centerEdgePoints) {
+                   edgePoints.put(
+                        when (point) {
+                            left -> Slope(Int.MAX_VALUE,Int.MAX_VALUE-1)
+                            right -> Slope(Int.MAX_VALUE,Int.MAX_VALUE-2)
+                            up -> Slope(Int.MAX_VALUE,Int.MAX_VALUE-3)
+                            down -> Slope(Int.MAX_VALUE,Int.MAX_VALUE-4)
+                            else -> throw IllegalStateException()
+                        },
+                        point
+                   )
+                }
+            }
+        }
+        return edgePoints
+    }
 
+    fun sortToEdgeRectangleBasedOnCenterPoint(center: Point):List<Point> {
+        val edgePoints = generateMapEdgePoints(center)
+        return edgePoints.values.toList().sortedWith(compareBy(
+                {
+                    when
+                }
+        ))
+    }
 
     fun findVisibleAsteroids(point: Point, indexedMap:Map<Point, Char> = this.indexedMap,dump:Boolean = false): Set<Point> {
         val allAsteroids = indexedMap.keys.filter { it != point }.toMutableList()
