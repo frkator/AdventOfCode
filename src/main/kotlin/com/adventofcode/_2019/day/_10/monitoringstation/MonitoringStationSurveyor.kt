@@ -49,9 +49,19 @@ data class Slope(val dX:Int, val dY:Int) {
     }
 
     companion object {
+
         fun of(center:Point, x:Int, y:Int):Slope {
             return Slope(Math.abs(center.x-x),y-center.y)
         }
+
+        fun of(center:Point, other:Point):Slope {
+            return of(center, other.x, other.y)
+        }
+
+    }
+
+    override fun toString(): String {
+        return "Slope($dX,$dY) = Slope(${dX/gcd},${dY/gcd})"
     }
 }
 
@@ -64,6 +74,14 @@ data class Point(val x: Int, val y: Int) {
                     this.x < center.x && this.y > center.y -> 3
                     else -> throw IllegalStateException()
                 }
+    }
+
+    fun opposite(slope:Slope, other:Point, center:Point):Boolean {
+        val thisSlope = Slope.of(this,other)
+        if (thisSlope != slope) {
+            return false
+        }
+        return this.quadrant(center) != other.quadrant(center)
     }
 }
 
