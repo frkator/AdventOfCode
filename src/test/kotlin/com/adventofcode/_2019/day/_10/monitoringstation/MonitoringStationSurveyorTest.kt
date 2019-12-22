@@ -10,15 +10,83 @@ internal class MonitoringStationSurveyorTest {
     companion object {
         @JvmStatic
         fun maps(): List<Arguments> {
-            return listOf(
+            return listOf(/*
                     Arguments.of(
                             ".#..#\n" +
                             ".....\n" +
                             "#####\n" +
                             "....#\n" +
                             "...##",
-                            Point(3, 4)
+                            Point(3, 4), mapOf<Int,Point>()
+                    ),
+                    Arguments.of(
+                            ".....\n" +
+                            ".###.\n" +
+                            ".###.\n" +
+                            ".###.\n" +
+                            ".....",
+                            Point(2, 2), mapOf<Int,Point>()
+                    ),*/
+                    Arguments.of(
+                            "###..#########.#####.\n" +
+                            ".####.#####..####.#.#\n" +
+                            ".###.#.#.#####.##..##\n" +
+                            "##.####.#.###########\n" +
+                            "###...#.####.#.#.####\n" +
+                            "#.##..###.########...\n" +
+                            "#.#######.##.#######.\n" +
+                            ".#..#.#..###...####.#\n" +
+                            "#######.##.##.###..##\n" +
+                            "#.#......#....#.#.#..\n" +
+                            "######.###.#.#.##...#\n" +
+                            "####.#...#.#######.#.\n" +
+                            ".######.#####.#######\n" +
+                            "##.##.##.#####.##.#.#\n" +
+                            "###.#######..##.#....\n" +
+                            "###.##.##..##.#####.#\n" +
+                            "##.########.#.#.#####\n" +
+                            ".##....##..###.#...#.\n" +
+                            "#..#.####.######..###\n" +
+                            "..#.####.############\n" +
+                            "..##...###..#########",
+                            Point(11,11), mapOf<Int,Point>()
+                    ),
+            Arguments.of(
+                    ".#..##.###...#######\n" +
+                            "##.############..##.\n" +
+                            ".#.######.########.#\n" +
+                            ".###.#######.####.#.\n" +
+                            "#####.##.#.##.###.##\n" +
+                            "..#####..#.#########\n" +
+                            "####################\n" +
+                            "#.####....###.#.#.##\n" +
+                            "##.#################\n" +
+                            "#####.##.###..####..\n" +
+                            "..######..##.#######\n" +
+                            "####.##.####...##..#\n" +
+                            ".#####..#.######.###\n" +
+                            "##...#.##########...\n" +
+                            "#.##########.#######\n" +
+                            ".####.#.###.###.#.##\n" +
+                            "....##.##.###..#####\n" +
+                            ".#.#.###########.###\n" +
+                            "#.#.#.#####.####.###\n" +
+                            "###.##.####.##.#..##",
+             Point(11,13),
+                    mapOf(
+                            1 to Point(11,12),
+                            2 to Point(12,1),
+                            3 to Point(12,2),
+                            10 to Point(12,8),
+                            20 to Point(16,0),
+                            50 to Point(16,9),
+                            100 to Point(10,16),
+                            199 to Point(9,6),
+                            200 to Point(8,2),
+                            201 to Point(10,9),
+                            299 to Point(11,1)
                     )
+            )
             )
         }
 
@@ -61,16 +129,27 @@ internal class MonitoringStationSurveyorTest {
         val actualResult = monitoringStationSurveyor.findBestLocation(true)
         val unsortedEdge = monitoringStationSurveyor.generateMapEdgePoints(actualResult)
         val sortedEdge = monitoringStationSurveyor.sortToEdgeRectangleBasedOnCenterPoint(actualResult)
-        _dump(sortedEdge,4,4,actualResult)
+        _dump(sortedEdge,monitoringStationSurveyor.xMax,monitoringStationSurveyor.yMax,actualResult)
+        _dump(sortedEdge,monitoringStationSurveyor.xMax,monitoringStationSurveyor.yMax,actualResult,false)
     }
 
-    fun _dump(points: List<Point>, xMax: Int, yMax: Int, center: Point) {
-        val map = points.withIndex().map { it.value to it.index.toString().toCharArray().last()}.toMap().toMutableMap()
+    fun _dump(points: List<Point>, xMax: Int, yMax: Int, center: Point,quadrant:Boolean = true) {
+        println ("$center ${points.size} \n$points\n${points.groupBy { it.quadrant(center) }.map { "${it.key}=${it.value}" }.joinToString (separator = "\n")}")
+        val pointsSet = LinkedHashSet(points)
+        val map = mutableMapOf<Point,Char>()
         for (x in 0..xMax) {
             for (y in 0..yMax) {
                 val point = Point(x,y)
-                if (!map.containsKey(point)) {
-                    map[point] = "0".toCharArray()[0]
+                if (point !in pointsSet) {
+                    map[point] = ".".toCharArray()[0]
+                }
+                else {
+                    map[point] = if (quadrant) {
+                        point.quadrant(center).toString().toCharArray().last()
+                    }
+                    else {
+                        pointsSet.indexOf(point).toString().toCharArray().last()
+                    }
                 }
                 if (point==center) {
                     map[center] = "x".toCharArray().first()
@@ -79,4 +158,20 @@ internal class MonitoringStationSurveyorTest {
         }
         dump(map.toMap(), xMax, yMax)
     }
+/*
+    @ParameterizedTest
+    @MethodSource("maps")
+    fun testVaporize(map: String, expectedResult: Point, expectedOrder:Map<Int,Point> = mapOf()) {
+        if (expectedOrder.isNotEmpty()) {
+            val monitoringStationSurveyor = MonitoringStationSurveyor(map)
+            val actualResult = monitoringStationSurveyor.vaporizeAsteroids(expectedResult,true)
+            assertEquals(expectedOrder, actualResult
+                                        .filterIndexed{idx, _ ->idx in expectedOrder.keys}
+                                        .mapIndexed { idx,pint -> idx to pint}
+                                        .toMap()
+            )
+        }
+    }
+    
+ */
 }
