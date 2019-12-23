@@ -178,6 +178,9 @@ class MonitoringStationSurveyor(map: String) {
     }
 
     fun generateMapEdgePoints(center: Point): MutableMap<Slope, Pair<Point,Point?>> {
+        if (xMax != yMax) {
+            throw IllegalStateException("only rectangular maps for now")
+        }
         val edgePoints = mutableMapOf<Slope, Pair<Point,Point?>>()
         val left = Point(0, center.y)
         val right = Point(xMax, center.y)
