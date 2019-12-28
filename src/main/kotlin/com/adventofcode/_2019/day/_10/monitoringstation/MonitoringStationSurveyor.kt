@@ -34,7 +34,12 @@ fun greatestCommonDenominator(a:Int, b:Int):Int {
     return if (b==0) { a } else { greatestCommonDenominator(b,a%b) }
 }
 
-data class Slope(val dX:Int, val dY:Int) : Comparable<Slope> {
+data class Slope(val dX:Int, val dY:Int, val negativeDirection:Boolean = false) : Comparable<Slope> {
+    /**
+     * notice that 1,10 == 10,
+     * this should be a custom comparator but I am lazy
+     *
+     */
     fun distance():Double {
         return kotlin.math.sqrt(dX.toDouble().times(gcd).pow(2) + dY.toDouble().times(gcd).pow(2))
     }
@@ -71,9 +76,14 @@ data class Slope(val dX:Int, val dY:Int) : Comparable<Slope> {
         }
 
         fun of(center:Point, other:Point):Slope {
-            val point2 = if (center.x < other.x) { other } else { center }
+            check(center != other)
+            val point2 = when {
+                center.x < other.x -> other
+                center.x == other.x && center.y < other.y -> other
+                else -> center
+            }
             val point1 = if (point2 == center) { other } else { center }
-            return Slope(point2.x - point1.x, point2.y - point1.y)
+            return Slope(point2.x - point1.x, point2.y - point1.y, center.y > other.y)
         }
 
     }
@@ -104,6 +114,10 @@ data class Point(val x: Int, val y: Int) {
             return false
         }
         return this.quadrant(center) != other.quadrant(center)
+    }
+
+    fun tanForCenter(center:Point): Double {
+        return (y-center.y).toDouble()/( x-center.x).toDouble()
     }
 }
 
@@ -178,9 +192,7 @@ class MonitoringStationSurveyor(map: String) {
     }
 
     fun generateMapEdgePoints(center: Point): MutableMap<Slope, Pair<Point,Point?>> {
-        if (xMax != yMax) {
-            throw IllegalStateException("only rectangular maps for now")
-        }
+        check(xMax == yMax) { "only rectangular maps for now" }
         val edgePoints = mutableMapOf<Slope, Pair<Point,Point?>>()
         val left = Point(0, center.y)
         val right = Point(xMax, center.y)
@@ -190,7 +202,7 @@ class MonitoringStationSurveyor(map: String) {
         for (x in 0..xMax) {
             for (y in 0..yMax) {
                 val point = Point(x,y)
-                if (center.x != x && center.y != y || (point in centerEdgePoints) ) {
+                if (center.x != x && center.y != y || (point in centerEdgePoints && point != center) ) {
                     val slope = Slope.of(center,x,y)
                     edgePoints[slope] = createPair(edgePoints[slope], slope, point, center)
                 }
@@ -204,21 +216,7 @@ class MonitoringStationSurveyor(map: String) {
         return edgePoints.values.flatMap { listOf(it.first,it.second) }.filterNotNull().sortedWith(
             compareBy(
                 { it.quadrant(center) },
-                { when(it.quadrant(center)) {
-                    0 -> it.x-center.x 
-                    1 -> center.x - it.x
-                    2 -> center.x - it.x
-                    3 -> it.x -center.x 
-                    else -> throw IllegalStateException()
-                }
-                },
-                { when(it.quadrant(center)) {
-                    0 -> it.y - center.y
-                    1 -> it.y - center.y
-                    2 -> center.y - it.y
-                    3 -> center.y - it.y
-                    else -> throw IllegalStateException()
-                } }
+                { it.tanForCenter(center) }
             )
         )
     }
@@ -283,5 +281,6 @@ fun main(args:Array<String>) {
     val bestLocation = Point(11,11)//monitoringStationSurveyor.findBestLocation()
     //println ("$bestLocation ${monitoringStationSurveyor.findVisibleAsteroids(bestLocation).size}")
     val asteroidVaporizationOrder = monitoringStationSurveyor.vaporizeAsteroids(bestLocation)
-    println("${asteroidVaporizationOrder[199]} ${asteroidVaporizationOrder[200]}")
+    val printer = {value:Point->"${value.x*100+value.y}"}
+    println("${printer(asteroidVaporizationOrder[199])} ${printer(asteroidVaporizationOrder[200])}")
 }
