@@ -6,6 +6,43 @@ import java.lang.IllegalStateException
 import java.math.BigInteger
 import java.util.function.Function
 
+fun println(msg: Any?)  {
+    if (IO.printOutput) {
+        kotlin.io.println(msg)
+    }
+}
+fun print(msg:Any?) {
+    if (IO.printOutput) {
+        kotlin.io.print(msg)
+    }
+}
+
+open class IO {
+    companion object {
+        private var _printOutput = true
+        var printOutput = _printOutput
+            get set
+
+        private var _impl = IO()
+        var impl = _impl
+            get() = _impl
+
+        fun set(io:IO) {
+            _impl = io
+        }
+    }
+
+    open fun inputImpl():String {
+        println("input:")
+        return readLine()!!
+    }
+
+    open fun outputImpl(output:BigInteger):BigInteger {
+        return output
+    }
+}
+
+
 enum class LoadMode {
     POSITION,
     IMMEDIATE,
@@ -21,12 +58,11 @@ enum class Operation(val code:Int, val operandCount:Int, val regular:Boolean) : 
     },
     INPUT (3,1,true) {
         override fun apply(operand: List<BigInteger>): BigInteger {
-            println("input:")
-            return readLine()!!.toBigInteger()
+            return IO.impl.inputImpl().toBigInteger()
         }
     },
     OUTPUT (4,1,true) {
-        override fun apply(operand: List<BigInteger>): BigInteger = operand[0]
+        override fun apply(operand: List<BigInteger>): BigInteger = IO.impl.outputImpl(operand[0])
     },
     JUMP_IF_TRUE(5,2,false) {
         override fun apply(operand: List<BigInteger>): BigInteger =  if (operand[0] > 0.toBigInteger()) { operand[1] } else { -1.toBigInteger() }
